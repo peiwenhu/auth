@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 )
 
@@ -43,8 +44,22 @@ func newAccessTokenClaimsFromMap(claimMap map[string]interface{}) (*accessTokenC
 		return nil, fmt.Errorf("expiration time cannot be parsed:%v", err)
 	}
 
+	var priv PVL
+	switch v := claimMap[field_pvl].(type) {
+	case int32:
+		priv = PVL(v)
+	case float64:
+		priv = PVL(v)
+	default:
+		panic(
+			fmt.Sprintf(
+				"Received unknown accessToken PVL type:%v,value:%v",
+				reflect.TypeOf(claimMap[field_pvl]), v))
+	}
+	//return nil, fmt.Errorf("%v", claimMap)
+
 	return &accessTokenClaims{
 		userid: claimMap[field_userid].(string),
-		priv:   PVL(claimMap[field_pvl].(int32)),
+		priv:   priv,
 		exp:    expTimeRepr}, nil
 }

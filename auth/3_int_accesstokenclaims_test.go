@@ -10,12 +10,12 @@ func TestToMap(t *testing.T) {
 	if err != nil {
 		t.Errorf("sample time generated error:%v", err)
 	}
-	accessClaims := accessTokenClaims{uuid: "testuuid", priv: God, exp: sampleTime}
+	accessClaims := accessTokenClaims{userid: "testuuid", priv: God, exp: sampleTime}
 	mapRepr := accessClaims.toMap()
 	if mapRepr[field_exp] != "2015-09-15T14:00:13Z" {
 		t.Errorf("time conversion wrong:%v", mapRepr)
 	}
-	if mapRepr[field_uuid] != "testuuid" {
+	if mapRepr[field_userid] != "testuuid" {
 		t.Errorf("uuid conversion wrong:%v", mapRepr)
 	}
 	if PVL(mapRepr[field_pvl].(int32)) != God {
@@ -28,7 +28,7 @@ func TestFromMap(t *testing.T) {
 	mapRepr := make(map[string]interface{})
 	mapRepr[field_exp] = "2015-09-15T14:00:13Z"
 	mapRepr[field_pvl] = int32(God)
-	mapRepr[field_uuid] = "testuuid"
+	mapRepr[field_userid] = "testuuid"
 
 	accessClaims, err := newAccessTokenClaimsFromMap(mapRepr)
 
@@ -40,7 +40,7 @@ func TestFromMap(t *testing.T) {
 	if accessClaims.exp != sampleTime {
 		t.Errorf("time conversion wrong:%v", accessClaims)
 	}
-	if accessClaims.userid != "testuserid" {
+	if accessClaims.userid != "testuuid" {
 		t.Errorf("uuid conversion wrong:%v", accessClaims)
 	}
 	if accessClaims.priv != God {
@@ -64,7 +64,7 @@ func TestFromMapInvalidTimeField(t *testing.T) {
 	mapRepr := make(map[string]interface{})
 	mapRepr[field_exp] = "2015-13-15T14:00:13Z"
 	mapRepr[field_pvl] = int32(God)
-	mapRepr[field_uuid] = "testuuid"
+	mapRepr[field_userid] = "testuuid"
 
 	_, err := newAccessTokenClaimsFromMap(mapRepr)
 

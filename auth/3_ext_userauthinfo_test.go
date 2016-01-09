@@ -14,7 +14,7 @@ func TestValidUser(t *testing.T) {
 	if err != nil {
 		t.Error("valid user considered invalid")
 	}
-	if user.UUID != useruuid {
+	if user.UserId.Id != useruuid {
 		t.Errorf("%v", user)
 	}
 	if user.accessToken != "token" {
