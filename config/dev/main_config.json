@@ -1,0 +1,9 @@
+{	
+	"version":"1",
+	"port":"10443",
+	"db_keyspace":"dev",
+	"db_hosts":["172.17.0.2"],
+	"cert_file_path":"/go/src/github.com/peiwenhu/auth/secrets/dev/cert.pem",
+	"key_file_path":"/go/src/github.com/peiwenhu/auth/secrets/dev/key.pem",
+	"clients_file_path":"/go/src/github.com/peiwenhu/auth/secrets/dev/clients"
+}

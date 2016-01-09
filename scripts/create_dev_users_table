@@ -1,0 +1,8 @@
+CREATE TABLE dev.users(
+	userid			ascii PRIMARY KEY,
+	priv			int,
+	refresh_token	ascii,
+	username		text,
+	password		ascii,
+	lang			ascii
+);

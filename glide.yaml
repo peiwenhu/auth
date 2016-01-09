@@ -1,0 +1,14 @@
+package: main
+import:
+- package: github.com/golang/mock
+  subpackages:
+  - gomock
+- package: github.com/gorilla/mux
+- package: github.com/gorilla/context
+- package: github.com/dgrijalva/jwt-go
+- package: gopkg.in/validator.v2
+- package: github.com/gocql/gocql
+- package: gopkg.in/inf.v0
+- package: github.com/hailocab/go-hostpool
+- package: github.com/golang/snappy
+- package: golang.org/x/crypto/bcrypt
