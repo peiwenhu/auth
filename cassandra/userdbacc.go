@@ -52,12 +52,12 @@ func (userdb userdbAcc) CreateUser(
 	refreshToken string, otherFields map[auth.UserFieldName]interface{}) error {
 
 	rawQueryStr := fmt.Sprintf("INSERT INTO users (%s,%s,%s,%s,%s,%s) "+
-		" VALUES(?,?,?,?,?)",
+		" VALUES(?,?,?,?,?,?) IF NOT EXISTS",
 		auth.UserField_UserId, auth.UserField_Name, auth.UserField_Password,
 		auth.UserField_Priv, auth.UserField_Refresh, auth.UserField_Language)
 
 	query := userdb.session.Query(rawQueryStr,
-		userid.Id, name, hashedPassword, refreshToken, priv, otherFields[auth.UserField_Language])
+		userid.Id, name, hashedPassword, priv, refreshToken, otherFields[auth.UserField_Language])
 
 	dummyRes := make(map[string]interface{})
 	applied, err := query.MapScanCAS(dummyRes)

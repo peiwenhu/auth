@@ -22,9 +22,9 @@ func NewRequestProcessor(
 }
 
 func (rp RequestProcessor) createUserHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("got createUser request:%v", r)
+	log.Printf("got createUser request")
 
-	userid := r.FormValue("userid")
+	userid := r.PostFormValue("userid")
 	if userid == "" {
 		log.Println("received blank userid")
 		writeJsonError(w, apiError{err: ErrInternal, code: http.StatusBadRequest})
@@ -71,6 +71,7 @@ func (rp RequestProcessor) createUserHandler(w http.ResponseWriter, r *http.Requ
 		case auth.ErrUserExists, auth.ErrUserIdInvalid, auth.ErrUserIdForbidden:
 			writeJsonError(w, apiError{err: err, code: http.StatusBadRequest})
 		default:
+			log.Printf("failed to create user:%v", err)
 			writeJsonError(w, apiError{err: ErrInternal, code: http.StatusInternalServerError})
 		}
 
