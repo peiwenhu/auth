@@ -38,7 +38,7 @@ func (rp RequestProcessor) createUserHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	clientId := r.FormValue("clientid")
-	clientSecret := r.FormValue("clientSecret")
+	clientSecret := r.FormValue("client_secret")
 	clientInfo := client.NewClient(clientId, clientSecret)
 
 	if err := rp.clientdbAccessor.VerifyClient(*clientInfo); err != nil {
