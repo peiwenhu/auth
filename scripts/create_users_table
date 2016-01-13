@@ -1,4 +1,4 @@
-CREATE TABLE dev.users(
+CREATE TABLE main.users(
 	userid			ascii PRIMARY KEY,
 	priv			int,
 	refresh_token	ascii,
