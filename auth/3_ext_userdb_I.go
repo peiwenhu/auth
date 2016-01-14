@@ -5,6 +5,9 @@ type UserDb_I interface {
 
 	UpdateUser(userid UserId, fields map[UserFieldName]interface{}) error
 
-	CreateUser(userid UserId, name string, hashedPassword []byte, priv PVL,
-		refreshToken string, otherFields map[UserFieldName]interface{}) error
+	CreateUser(userid UserId, name string, hashedPassword []byte, priv PVL, otherFields map[UserFieldName]interface{}) error
+
+	GetRefreshToken(userid UserId, clientId string) (*string, error)
+
+	SetRefreshToken(userid UserId, clientId string, refreshToken string) error
 }

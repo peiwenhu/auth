@@ -49,12 +49,33 @@ func (_mr *_MockUserDb_IRecorder) UpdateUser(arg0, arg1 interface{}) *gomock.Cal
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "UpdateUser", arg0, arg1)
 }
 
-func (_m *MockUserDb_I) CreateUser(userid UserId, name string, hashedPassword []byte, priv PVL, refreshToken string) error {
-	ret := _m.ctrl.Call(_m, "CreateUser", userid, name, hashedPassword, priv, refreshToken)
+func (_m *MockUserDb_I) CreateUser(userid UserId, name string, hashedPassword []byte, priv PVL, otherFields map[UserFieldName]interface{}) error {
+	ret := _m.ctrl.Call(_m, "CreateUser", userid, name, hashedPassword, priv, otherFields)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 func (_mr *_MockUserDb_IRecorder) CreateUser(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "CreateUser", arg0, arg1, arg2, arg3, arg4)
+}
+
+func (_m *MockUserDb_I) GetRefreshToken(userid UserId, clientId string) (*string, error) {
+	ret := _m.ctrl.Call(_m, "GetRefreshToken", userid, clientId)
+	ret0, _ := ret[0].(*string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockUserDb_IRecorder) GetRefreshToken(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetRefreshToken", arg0, arg1)
+}
+
+func (_m *MockUserDb_I) SetRefreshToken(userid UserId, clientId string, refreshToken string) error {
+	ret := _m.ctrl.Call(_m, "SetRefreshToken", userid, clientId, refreshToken)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockUserDb_IRecorder) SetRefreshToken(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "SetRefreshToken", arg0, arg1, arg2)
 }

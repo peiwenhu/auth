@@ -3,6 +3,8 @@ package auth
 import (
 	"testing"
 	"time"
+
+	"github.com/golang/mock/gomock"
 )
 
 func TestCreateAccessToken(t *testing.T) {
@@ -57,7 +59,7 @@ func TestGetAccessTokenClaims(t *testing.T) {
 		"eyJleHAiOiIyMDE1LTA5LTE1VDE0OjAwOjEzWiIsInB2bCI6MSwic3ViIjoidGVzdHV1aWQifQ." +
 		"pZER8fTP_nUdcZSUbYpBNFXlLuiKbb4DLke_ItSUWsY"
 
-	accClaimsToTest, err := authenForTest.getAccessTokenClaims(accToken)
+	accClaimsToTest, err := authenForTest.decodeAccessToken(accToken)
 	if err != nil {
 		t.Error(err)
 	}
@@ -75,7 +77,7 @@ func TestGetAccessTokenClaimsInvalidSig(t *testing.T) {
 		"eyJleHAiOiIyMDE1LTA5LTE1VDE0OjAwOjEzWiIsInB2bCI6MSwic3ViIjoidGVzdHV1aWQifQ." +
 		"badsig"
 
-	_, err := authenForTest.getAccessTokenClaims(accToken)
+	_, err := authenForTest.decodeAccessToken(accToken)
 	if err == nil {
 		t.Error("sig err should have been there")
 	}
@@ -88,7 +90,7 @@ func TestGetAccessTokenClaimsInvalidClaim(t *testing.T) {
 
 	accToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDE1LTEzLTE1VDE0OjAwOjEzWiIsInB2bCI6OTk5OTk5OTk5OSwic3ViIjoidGVzdHV1aWQifQ.lWaVuMN2fif7ajEa-vnGJ293ZQm-KbZH1GDfSd8x6RU"
 
-	_, err := authenForTest.getAccessTokenClaims(accToken)
+	_, err := authenForTest.decodeAccessToken(accToken)
 	if err == nil {
 		t.Error("claim err should have been there")
 	}
@@ -140,5 +142,32 @@ func TestVerifyPrivilege(t *testing.T) {
 
 	if _, err := authenForTest.VerifyPrivilege(*userInfo, RegularUser); err == nil {
 		t.Error("verify client should get time error")
+	}
+}
+
+func TestCreateUser(t *testing.T) {
+	testKey := []byte(`MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4f5wg5l2hKsTeNemV41`)
+
+	authenForTest := NewAuthenticator(testKey)
+
+	//-- params
+	userid := "salmon"
+	username := "the fish"
+	password := "password"
+	cred, _ := NewUserIDPassword(userid, []byte(password))
+	clientId := "ios"
+	otherFields := make(map[UserFieldName]interface{})
+	otherFields[UserField_Language] = "en"
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockUserDb := NewMockUserDb_I(ctrl)
+
+	mockUserDb.EXPECT().CreateUser(cred.UserId(), username, gomock.Any(), RegularUser, otherFields)
+	mockUserDb.EXPECT().SetRefreshToken(cred.UserId(), clientId, gomock.Any())
+	_, _, err := authenForTest.CreateUser(
+		userid, username, []byte(password), clientId, otherFields, mockUserDb)
+	if err != nil {
+		t.Error("create user failed:%v", err)
 	}
 }

@@ -64,7 +64,7 @@ func (rp RequestProcessor) createUserHandler(w http.ResponseWriter, r *http.Requ
 	otherFields := make(map[auth.UserFieldName]interface{})
 	otherFields[auth.UserField_Language] = userlang
 	accessToken, refreshToken, err := rp.authenticator.CreateUser(
-		userid, username, []byte(password), otherFields, rp.userdbAccessor)
+		userid, username, []byte(password), clientId, otherFields, rp.userdbAccessor)
 
 	if err != nil {
 		switch err {

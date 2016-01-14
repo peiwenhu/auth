@@ -29,7 +29,7 @@ func (authenticator Authenticator) VerifyPrivilege(
 
 	//-- get PVL
 
-	accessClaims, err := authenticator.getAccessTokenClaims(userInfo.accessToken)
+	accessClaims, err := authenticator.decodeAccessToken(userInfo.accessToken)
 	if err != nil {
 		return false, err
 	}
@@ -48,24 +48,19 @@ func (authenticator Authenticator) VerifyPrivilege(
 
 }
 
-func (authenticator Authenticator) refreshTokens(
+func (authenticator Authenticator) refreshAccToken(
 	cred UserCredentials_I,
-	userStorage UserDb_I) (*string, *string, error) {
+	userStorage UserDb_I) (*string, error) {
 
 	if err := cred.verify(userStorage); err != nil {
-		return nil, nil, err
-	}
-
-	newRefreshToken, err := authenticator.createRefreshToken()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to refresh tokens:%v", err)
+		return nil, err
 	}
 
 	fieldsToGet := []UserFieldName{UserField_Priv}
 
 	fields, err := userStorage.GetFields(cred.UserId(), fieldsToGet)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to refresh tokens:%v", err)
+		return nil, fmt.Errorf("failed to refresh tokens:%v", err)
 	}
 
 	priv := fields[UserField_Priv].(PVL)
@@ -77,26 +72,18 @@ func (authenticator Authenticator) refreshTokens(
 
 	newAccessToken, err := authenticator.createAccessToken(newAccessClaims)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to refresh tokens:%v", err)
+		return nil, fmt.Errorf("failed to refresh tokens:%v", err)
 	}
 
-	fieldsToUpdate := make(map[UserFieldName]interface{})
-
-	fieldsToUpdate[UserField_Refresh] = newRefreshToken
-
-	if err = userStorage.UpdateUser(cred.UserId(), fieldsToUpdate); err != nil {
-		return nil, nil, fmt.Errorf("failed to refresh tokens:%v", err)
-	}
-
-	return newAccessToken, newRefreshToken, nil
+	return newAccessToken, nil
 
 }
 
 func (authenticator Authenticator) CreateUser(
-	useridStr string, name string, password []byte,
+	useridStr string, name string, password []byte, clientId string,
 	otherFields map[UserFieldName]interface{}, userStorage UserDb_I) (*string, *string, error) {
 
-	userCred, err := NewUserIDPasswordWithEnc(useridStr, password)
+	userCred, err := NewUserIDPassword(useridStr, password)
 	if err != nil {
 		return nil, nil, ErrUserIdInvalid
 	}
@@ -116,10 +103,16 @@ func (authenticator Authenticator) CreateUser(
 		return nil, nil, fmt.Errorf("user creation failed:%v", err)
 	}
 
-	//-- 3. insert user
+	//-- insert user
+
 	if err = userStorage.CreateUser(
-		userCred.UserId(), name, userCred.hashedPassword,
-		RegularUser, *refreshToken, otherFields); err != nil {
+		userCred.UserId(), name, userCred.hashedPassword(),
+		RegularUser, otherFields); err != nil {
+		return nil, nil, fmt.Errorf("user creation failed:%v", err)
+	}
+
+	//-- store refresh token
+	if err = userStorage.SetRefreshToken(userCred.UserId(), clientId, *refreshToken); err != nil {
 		return nil, nil, fmt.Errorf("user creation failed:%v", err)
 	}
 
@@ -157,7 +150,7 @@ func (a Authenticator) createRefreshToken() (*string, error) {
 	return &encodedTokenStr, nil
 }
 
-func (authenticator Authenticator) getAccessTokenClaims(
+func (authenticator Authenticator) decodeAccessToken(
 	accessTokenStr string) (*accessTokenClaims, error) {
 
 	accessToken, err := jwt.Parse(accessTokenStr,

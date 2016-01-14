@@ -12,26 +12,32 @@ type UserCredentials_I interface {
 }
 
 type UserIDPassword struct {
-	userId         UserId
-	hashedPassword []byte
+	userId   UserId
+	password []byte
 }
 
-func NewUserIDPasswordWithEnc(newUserIdStr string, password []byte) (*UserIDPassword, error) {
+func NewUserIDPassword(newUserIdStr string, password []byte) (*UserIDPassword, error) {
 	newUserId, err := NewUserid(newUserIdStr)
 	if err != nil {
 		return nil, err
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
-	return &UserIDPassword{userId: *newUserId, hashedPassword: hashedPassword}, nil
+	return &UserIDPassword{userId: *newUserId, password: password}, nil
 }
 
 func (u UserIDPassword) UserId() UserId {
 	return u.userId
+}
+
+func (cred UserIDPassword) hashedPassword() []byte {
+	hashedPassword, err := bcrypt.GenerateFromPassword(cred.password, bcrypt.DefaultCost)
+
+	if err != nil {
+		panic(fmt.Sprintf("Creating hashed password failed:%v", err))
+	}
+
+	return hashedPassword
+
 }
 
 func (cred UserIDPassword) verify(userStorage UserDb_I) error {
@@ -40,7 +46,7 @@ func (cred UserIDPassword) verify(userStorage UserDb_I) error {
 	if err != nil {
 		return fmt.Errorf("failed to verify:%v", err)
 	}
-	if fieldsRes[UserField_Password] != string(cred.hashedPassword) {
+	if bcrypt.CompareHashAndPassword([]byte(fieldsRes[UserField_Password].(string)), cred.password) != nil {
 		return ErrWrongUsernameOrPassword
 	}
 	return nil
@@ -49,6 +55,7 @@ func (cred UserIDPassword) verify(userStorage UserDb_I) error {
 
 type UserIDRefreshToken struct {
 	userId       UserId
+	clientId     string
 	RefreshToken string
 }
 
@@ -57,12 +64,11 @@ func (u UserIDRefreshToken) UserId() UserId {
 }
 
 func (cred UserIDRefreshToken) verify(userStorage UserDb_I) error {
-	fieldsToGet := []UserFieldName{UserField_Refresh}
-	fieldsRes, err := userStorage.GetFields(cred.UserId(), fieldsToGet)
+	refreshToken, err := userStorage.GetRefreshToken(cred.UserId(), cred.clientId)
 	if err != nil {
 		return fmt.Errorf("failed to verify:%v", err)
 	}
-	if fieldsRes[UserField_Refresh] != cred.RefreshToken {
+	if refreshToken == nil || *refreshToken != cred.RefreshToken {
 		return ErrWrongRefreshToken
 	}
 	return nil

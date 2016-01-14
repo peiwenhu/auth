@@ -48,16 +48,15 @@ func (userdb userdbAcc) UpdateUser(
 }
 func (userdb userdbAcc) CreateUser(
 	userid auth.UserId, name string,
-	hashedPassword []byte, priv auth.PVL,
-	refreshToken string, otherFields map[auth.UserFieldName]interface{}) error {
+	hashedPassword []byte, priv auth.PVL, otherFields map[auth.UserFieldName]interface{}) error {
 
-	rawQueryStr := fmt.Sprintf("INSERT INTO users (%s,%s,%s,%s,%s,%s) "+
-		" VALUES(?,?,?,?,?,?) IF NOT EXISTS",
+	rawQueryStr := fmt.Sprintf("INSERT INTO users (%s,%s,%s,%s,%s) "+
+		" VALUES(?,?,?,?,?) IF NOT EXISTS",
 		auth.UserField_UserId, auth.UserField_Name, auth.UserField_Password,
-		auth.UserField_Priv, auth.UserField_Refresh, auth.UserField_Language)
+		auth.UserField_Priv, auth.UserField_Language)
 
 	query := userdb.session.Query(rawQueryStr,
-		userid.Id, name, hashedPassword, priv, refreshToken, otherFields[auth.UserField_Language])
+		userid.Id, name, hashedPassword, priv, otherFields[auth.UserField_Language])
 
 	dummyRes := make(map[string]interface{})
 	applied, err := query.MapScanCAS(dummyRes)
@@ -66,6 +65,32 @@ func (userdb userdbAcc) CreateUser(
 	}
 	if applied == false {
 		return auth.ErrUserExists
+	}
+	return nil
+}
+
+func (userdb userdbAcc) GetRefreshToken(userid auth.UserId, clientId string) (*string, error) {
+	rawQueryStr := fmt.Sprintf("SELECT %s FROM refresh_by_user_client WHERE %s = ? AND %s = ?",
+		auth.RefreshField_RefreshTok, auth.RefreshField_UserId, auth.RefreshField_ClientId)
+	query := userdb.session.Query(rawQueryStr,
+		userid.Id, clientId)
+	refreshToken := new(string)
+	if err := query.Scan(refreshToken); err != nil {
+		return nil, err
+	}
+	return refreshToken, nil
+}
+
+func (userdb userdbAcc) SetRefreshToken(userid auth.UserId, clientId string, refreshToken string) error {
+	rawQueryStr := fmt.Sprintf("INSERT INTO refresh_by_user_client (%s,%s,%s) "+
+		" VALUES(?,?,?) ",
+		auth.RefreshField_UserId, auth.RefreshField_ClientId, auth.RefreshField_RefreshTok)
+
+	query := userdb.session.Query(rawQueryStr,
+		userid.Id, clientId, refreshToken)
+
+	if err := query.Exec(); err != nil {
+		return fmt.Errorf("setting refresh token failed:%v", err)
 	}
 	return nil
 }
