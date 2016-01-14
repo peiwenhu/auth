@@ -1,0 +1,14 @@
+CREATE TABLE main.users(
+	userid			ascii PRIMARY KEY,
+	priv			int,
+	username		text,
+	password		ascii,
+	lang			ascii
+);
+
+CREATE TABLE main.refresh_by_user_client(
+	userid ascii,
+	client_id ascii,
+	refresh_token ascii,
+	PRIMARY KEY(userid,client_id)
+);
