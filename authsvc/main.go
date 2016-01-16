@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gocql/gocql"
 
@@ -68,8 +70,23 @@ func startService(config mainConfig) {
 	//-- init client db acc
 	clientdbacc := NewClientdbAcc(getClients(config.ClientsFilePath))
 
+	dbHosts := config.DB_hosts
+
+	if len(dbHosts) == 0 {
+		log.Println("No database address specified in config." +
+			"Use from env var CASSANDRA_SERVICE_HOST")
+		dbHosts = strings.Split(os.Getenv("CASSANDRA_SERVICE_HOST"), " ")
+		if len(dbHosts) == 0 {
+			log.Println("No database address specified in env var." +
+				"Use localhost")
+			dbHosts = []string{"127.0.0.1"}
+		}
+	}
+
+	log.Println("Using database host:", dbHosts)
+
 	//-- set up db
-	cluster := gocql.NewCluster(config.DB_hosts...)
+	cluster := gocql.NewCluster(dbHosts...)
 	cluster.Keyspace = config.DB_Keyspace
 	session, err := cluster.CreateSession()
 	if err != nil {
