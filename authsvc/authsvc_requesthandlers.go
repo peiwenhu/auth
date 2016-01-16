@@ -81,8 +81,8 @@ func (rp RequestProcessor) createUserHandler(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var res struct {
-		AccessToken  string `json:access_token`
-		RefreshToken string `json:refresh_token`
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 	res.AccessToken = *accessToken
 	res.RefreshToken = *refreshToken
