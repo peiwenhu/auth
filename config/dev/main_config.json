@@ -1,8 +1,0 @@
-{	
-	"version":"1",
-	"port":"443",
-	"db_keyspace":"main",	
-	"cert_file_path":"/go/src/github.com/peiwenhu/auth/secrets/dev/cert.pem",
-	"key_file_path":"/go/src/github.com/peiwenhu/auth/secrets/dev/key.pem",
-	"clients_file_path":"/go/src/github.com/peiwenhu/auth/secrets/dev/clients"
-}
