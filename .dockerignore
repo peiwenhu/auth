@@ -1,0 +1,5 @@
+nondev
+*.md
+LICENSE
+*.out
+*.yaml
