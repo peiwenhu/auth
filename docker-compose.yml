@@ -1,0 +1,15 @@
+cassandra:
+  image: cassandra:2.2
+  container_name: auth_cass  
+authsvc:
+  container_name: authsvc
+  build: .
+  ports:
+    - "10443:443"
+  volumes:
+    - ./config /authsvc/config
+    - ./secrets /authsvc/secrets
+  links:
+    - cassandra
+  environment:
+    - CASSANDRA_SERVICE_HOST=cassandra

@@ -75,11 +75,14 @@ func startService(config mainConfig) {
 	if len(dbHosts) == 0 {
 		log.Println("No database address specified in config." +
 			"Use from env var CASSANDRA_SERVICE_HOST")
-		dbHosts = strings.Split(os.Getenv("CASSANDRA_SERVICE_HOST"), " ")
-		if len(dbHosts) == 0 {
+
+		envVal := os.Getenv("CASSANDRA_SERVICE_HOST")
+		if len(envVal) == 0 {
 			log.Println("No database address specified in env var." +
-				"Use localhost")
-			dbHosts = []string{"127.0.0.1"}
+				"Use cassandra")
+			dbHosts = []string{"cassandra"}
+		} else {
+			dbHosts = strings.Split(envVal, " ")
 		}
 	}
 
