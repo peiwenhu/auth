@@ -14,8 +14,7 @@ type Authenticator struct {
 	key []byte
 }
 
-func NewAuthenticator(newKey []byte) (
-	newObj *Authenticator) {
+func NewAuthenticator(newKey []byte) (newObj *Authenticator) {
 	return &Authenticator{key: newKey}
 }
 
@@ -63,7 +62,7 @@ func (authenticator Authenticator) refreshAccToken(
 		return nil, fmt.Errorf("failed to refresh tokens:%v", err)
 	}
 
-	priv := fields[UserField_Priv].(PVL)
+	priv := PVL(fields[UserField_Priv].(int))
 
 	newAccessClaims := accessTokenClaims{
 		userid: cred.UserId().Id,
@@ -117,6 +116,50 @@ func (authenticator Authenticator) CreateUser(
 	}
 
 	return accessToken, refreshToken, nil
+}
+
+func (authenticator Authenticator) Login(
+	useridStr string, password []byte, clientId string,
+	userStorage UserDb_I) (acToken *string, refToken *string,
+	name *string, language *string, e error) {
+
+	userCred, err := NewUserIDPassword(useridStr, password)
+	if err != nil {
+		return nil, nil, nil, nil, ErrUserIdInvalid
+	}
+	if err = userCred.verify(userStorage); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	refreshToken, err := userStorage.GetRefreshToken(userCred.UserId(), clientId)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("failed to login:%v", err)
+	}
+
+	fieldsToGet := []UserFieldName{UserField_Priv, UserField_Name, UserField_Language}
+
+	fields, err := userStorage.GetFields(userCred.UserId(), fieldsToGet)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("failed to login:%v", err)
+	}
+
+	priv := PVL(fields[UserField_Priv].(int))
+
+	newAccessClaims := accessTokenClaims{
+		userid: userCred.UserId().Id,
+		priv:   priv,
+		exp:    time.Now().UTC().AddDate(0, 0, 1)}
+
+	newAccessToken, err := authenticator.createAccessToken(newAccessClaims)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("failed to login:%v", err)
+	}
+
+	username := fields[UserField_Name].(string)
+	lang := fields[UserField_Language].(string)
+
+	return newAccessToken, refreshToken, &username, &lang, nil
+
 }
 
 /* -------------------------------------

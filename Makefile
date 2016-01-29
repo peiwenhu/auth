@@ -32,6 +32,6 @@ dbrun:
 
 #---- app
 dkbuilddev:
-	docker build -t authsvc -f Dockerfile_dev .
+	docker build -t authsvc .
 dkrun:
 	docker run --link auth_cass:cassandra --rm -it -p 10443:443 authsvc

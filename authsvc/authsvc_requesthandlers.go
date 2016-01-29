@@ -77,7 +77,7 @@ func (rp RequestProcessor) createUserHandler(w http.ResponseWriter, r *http.Requ
 
 		return
 	}
-	//write good response
+
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var res struct {
@@ -86,6 +86,56 @@ func (rp RequestProcessor) createUserHandler(w http.ResponseWriter, r *http.Requ
 	}
 	res.AccessToken = *accessToken
 	res.RefreshToken = *refreshToken
+
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		panic(err)
+	}
+}
+
+func (rp RequestProcessor) loginHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("got login request")
+
+	userid := r.PostFormValue("userid")
+	if userid == "" {
+		log.Println("received blank userid")
+		writeJsonError(w, apiError{err: ErrInternal, code: http.StatusBadRequest})
+		return
+	}
+	password := r.FormValue("password")
+	if password == "" {
+		log.Println("received blank password")
+		writeJsonError(w, apiError{err: ErrInternal, code: http.StatusBadRequest})
+		return
+	}
+
+	clientId := r.FormValue("clientid")
+	clientSecret := r.FormValue("client_secret")
+	clientInfo := client.NewClient(clientId, clientSecret)
+
+	if err := rp.clientdbAccessor.VerifyClient(*clientInfo); err != nil {
+		writeJsonError(w, apiError{err: err, code: http.StatusBadRequest})
+		return
+	}
+
+	accessToken, refreshToken, username, lang, err :=
+		rp.authenticator.Login(userid, []byte(password), clientId, rp.userdbAccessor)
+	if err != nil {
+		writeJsonError(w, apiError{err: err, code: http.StatusBadRequest})
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	var res struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		Username     string `json:"username"`
+		Lang         string `json:"lang"`
+	}
+	res.AccessToken = *accessToken
+	res.RefreshToken = *refreshToken
+	res.Username = *username
+	res.Lang = *lang
 
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		panic(err)

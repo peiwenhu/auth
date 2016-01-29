@@ -2,6 +2,7 @@ package cassandra
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gocql/gocql"
 	auth "github.com/peiwenhu/auth/auth"
@@ -19,20 +20,22 @@ func GetUserdbAccessor(s *gocql.Session) auth.UserDb_I {
 func (userdb userdbAcc) GetFields(
 	userid auth.UserId, fields []auth.UserFieldName) (
 	map[auth.UserFieldName]interface{}, error) {
-	rawQueryStr := "SELECT "
-	for _, str := range fields {
-		rawQueryStr = fmt.Sprintf("%s %s", rawQueryStr, str)
-	}
-	rawQueryStr = fmt.Sprintf(
-		"%s FROM users WHERE %s = ? LIMIT 1", rawQueryStr, auth.UserField_UserId)
 
-	query := userdb.session.Query(rawQueryStr, userid)
+	fieldStrs := make([]string, len(fields))
+	for i := range fields {
+		fieldStrs[i] = string(fields[i])
+	}
+	fieldQueryStr := strings.Join(fieldStrs, ",")
+	rawQueryStr := fmt.Sprintf(
+		"SELECT %s FROM users WHERE %s = ? LIMIT 1", fieldQueryStr, auth.UserField_UserId)
+
+	query := userdb.session.Query(rawQueryStr, userid.Id)
 	cqlRes := make(map[string]interface{})
 	if err := query.MapScan(cqlRes); err != nil {
 		if err == gocql.ErrNotFound {
 			return nil, auth.ErrNotFound
 		}
-		return nil, fmt.Errorf("Get user fields failed:%v", err)
+		return nil, fmt.Errorf("Get user fields failed:%v, query:%s,user id:%s", err, rawQueryStr, userid.Id)
 	}
 	ourRes := make(map[auth.UserFieldName]interface{})
 	for _, key := range fields {

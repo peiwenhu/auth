@@ -37,6 +37,12 @@ func buildRoutes(config mainConfig, rp *RequestProcessor) *Routes {
 			"/api/v" + version + "/createuser",
 			rp.createUserHandler,
 		},
+		Route{
+			"Login",
+			"POST",
+			"/api/v" + version + "/login",
+			rp.loginHandler,
+		},
 	}
 
 	return &routes
